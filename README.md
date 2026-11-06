@@ -2,12 +2,12 @@
 
 Controller button hints for Stardew Valley's menus, and the game's own PlayStation, Switch and Xbox button art in its controller screens. It only draws. It never handles, blocks or sends an input, so it cannot change what a button does.
 
-Status, `0.1.0-beta.4`, a beta. Needs Stardew Valley 1.6.15 and SMAPI 4.2.1 or newer.
+Status, `0.1.0-beta.5`, a beta. Needs Stardew Valley 1.6.15 and SMAPI 4.2.1 or newer.
 
 ## What it does
 
-- **Hints along the bottom of the game menu, chests, shops, the Community Center bundles and Robin's building list** while a controller is in use, in the game's own tooltip box. For example, in a chest, "A Select, B Close, LB Backpack, RB Chest, View Sort". Every hint was checked against the game's code. A hint only shows when its button does that in that menu, and Close and Sort only show when the menu can do them.
-- **Hints that follow what is highlighted.** In the backpack page of the game menu, A says "Pick up" on an item. In a chest, A says "Take" on a chest item and "Put in chest" on a backpack item. In a shop it says "Buy" on an item for sale and "Sell stack" on a backpack item the shop will take, which the game sells at once with no confirmation. On anything else it says "Select". X, a hidden controller feature, splits ONE item off a stack where A moves the whole stack, so it shows as "Take one", "Put one in chest" or "Pick up one", and only for a stack of more than one that can be split, never for a tool, a single item or with a full hand. The game already shows the sell price itself in its own hover tooltip, so DewPad does not repeat it. Each one was read from the game's code and checked in the game, including that an item the shop does not buy, and a tool, stay "Select".
+- **Hints along the bottom of the game menu, chests, shops, the Community Center bundles, Robin's building list and the journal** while a controller is in use, in the game's own tooltip box. For example, in a chest, "A Select, B Close, LB Backpack, RB Chest, View Sort". Every hint was checked against the game's code. A hint only shows when its button does that in that menu, and Close and Sort only show when the menu can do them.
+- **Hints that follow what is highlighted.** In the backpack page of the game menu, A says "Pick up" on an item. In a chest, A says "Take" on a chest item and "Put in chest" on a backpack item. In a shop it says "Buy" on an item for sale and "Sell stack" on a backpack item the shop will take, which the game sells at once with no confirmation. On anything else it says "Select". While you hold an item, A says "Place" on a backpack slot and "Put in chest" on the chest side, and Close drops out, because a chest will not close with an item in your hand. X, a hidden controller feature, splits ONE item off a stack where A moves the whole stack, so it shows as "Take one", "Put one in chest" or "Pick up one", and only for a stack of more than one that can be split, never for a tool, a single item or with a full hand. The game already shows the sell price itself in its own hover tooltip, so DewPad does not repeat it. Each one was read from the game's code and checked in the game, including that an item the shop does not buy, and a tool, stay "Select".
 - **Your pad's buttons.** Choose Xbox, PlayStation, PlayStation with Circle to confirm, Switch, or Steam Deck. The hints use the game's own glyphs, and the shoulder and trigger buttons are labelled the way your pad labels them, such as L1 and L2 on a PlayStation pad and on a Steam Deck. Auto picks for you where the pad says what it is.
 - **The game's own controller screens in that style too.** The controls tutorial, the fishing and arcade help and the button icons. The game already has this art for all four layouts and only ever draws the Xbox one. DewPad shows the one you chose.
 
@@ -28,10 +28,14 @@ Every setting is in the Generic Mod Config Menu if you have it, or in `config.js
 
 ## Limits
 
-- Only the game menu, chests, shops, the bundle screens and Robin's building list have hints so far. Other menus show none, and so does any menu another mod has derived from those, because it may handle the buttons differently. The journal is left out because the game keeps its page numbers out of reach.
+- Only the game menu, chests, shops, the bundle screens, Robin's building list and the journal have hints so far. Other menus show none, and so does any menu another mod has derived from those, because it may handle the buttons differently. Inside a quest in the journal there are none, because B may go back or close the whole journal and the code does not make clear which.
 - The strip never covers a menu. On a screen about 800 pixels high, such as the Steam Deck's, the game menu has room for a compact strip, and the shop and the chest do not, so those show none. A screen 720 pixels high has room for none.
 - The shoulder and trigger buttons are drawn as dark labelled pills, because the game's art has no glyph for them.
 - Not tested yet, the settings page in Generic Mod Config Menu, split screen, a real PlayStation, Switch or Steam Deck pad (the pad name matching is written from SDL's documented names and has not met real hardware, and the `dewpad` console command shows what name was read), and anything but Windows. `docs/RESEARCH.md` has the full list.
+
+## Player complaints
+
+`docs/COMPLAINTS.md` lists what players say is wrong with the controller, checked against the game's code, with what DewPad does about each and what is left to a different kind of mod. One of the oldest, a chest erasing an item when the backpack is full, is already fixed in 1.6.15.
 
 ## Cost
 

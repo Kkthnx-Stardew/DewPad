@@ -41,9 +41,19 @@ namespace DewPad.Prompts
         /// <summary>In an ordinary chest with an empty hand, A takes a chest item to the backpack and puts a backpack item in the chest (<c>ItemGrabMenu.receiveLeftClick</c>).</summary>
         private static SelectAction ChestAction(ItemGrabMenu grab, MenuKind kind)
         {
-            if (kind != MenuKind.Chest || grab.heldItem is not null)
+            if (kind != MenuKind.Chest)
                 return SelectAction.Select;
             var spot = grab.currentlySnappedComponent;
+
+            // a held item, for example after taking one with a full backpack, which keeps the menu from closing until it is put down. A on the chest
+            // side puts it in the chest (behaviorFunction) and A on a backpack slot puts it there (MenuWithInventory.receiveLeftClick)
+            if (grab.heldItem is not null)
+            {
+                if (spot is not null && grab.ItemsToGrabMenu is { } chestGrid && chestGrid.inventory.Contains(spot) && grab.behaviorFunction is not null)
+                    return SelectAction.PutInChest;
+                return spot is not null && grab.inventory.inventory.Contains(spot) ? SelectAction.Place : SelectAction.Select;
+            }
+
             if (grab.showReceivingMenu && OnClickableItem(grab.ItemsToGrabMenu, spot))
                 return SelectAction.Take;
             if (grab.behaviorFunction is not null && OnClickableItem(grab.inventory, spot))
@@ -67,8 +77,12 @@ namespace DewPad.Prompts
         /// <summary>In the backpack page of the game menu, A picks up the stack under the highlight and X picks up one (<c>InventoryPage</c> and <c>InventoryMenu.rightClick</c>). Only with an empty hand.</summary>
         private static (SelectAction, OneAction) BackpackActions(IClickableMenu? page)
         {
-            if (page is not InventoryPage backpack || page.GetType() != typeof(InventoryPage) || Game1.player.CursorSlotItem is not null)
+            if (page is not InventoryPage backpack || page.GetType() != typeof(InventoryPage))
                 return (SelectAction.Select, OneAction.None);
+
+            // with an item in the hand, A puts it down on a backpack slot, swapping with what is there
+            if (Game1.player.CursorSlotItem is not null)
+                return (backpack.currentlySnappedComponent is { } held && backpack.inventory.inventory.Contains(held) ? SelectAction.Place : SelectAction.Select, OneAction.None);
             var item = ItemAt(backpack.inventory, backpack.currentlySnappedComponent);
             if (item is null)
                 return (SelectAction.Select, OneAction.None);
@@ -99,7 +113,7 @@ namespace DewPad.Prompts
 
             // a menu that another mod derives from the game's may handle the buttons differently, so only the game's own menus are described
             if (menu.GetType() != typeof(GameMenu) && menu.GetType() != typeof(ItemGrabMenu) && menu.GetType() != typeof(ShopMenu)
-                && menu.GetType() != typeof(JunimoNoteMenu) && menu.GetType() != typeof(CarpenterMenu))
+                && menu.GetType() != typeof(JunimoNoteMenu) && menu.GetType() != typeof(CarpenterMenu) && menu.GetType() != typeof(QuestLog))
                 return default;
 
             switch (menu)
@@ -125,6 +139,8 @@ namespace DewPad.Prompts
                     var kind = bundle.specificBundlePage ? MenuKind.BundleIngredients : bundle.fromGameMenu ? MenuKind.BundleRooms : MenuKind.BundlePlain;
                     return new MenuFacts(kind, bundle.readyToClose(), false, bundle.yPositionOnScreen + bundle.height);
                 }
+                case QuestLog journal:
+                    return JournalReader.Read(journal);
                 case CarpenterMenu carpenter when !carpenter.onFarm:
                     // only the building list, not the farm view where a building is placed
                     return new MenuFacts(MenuKind.Carpenter, carpenter.readyToClose(), false, carpenter.yPositionOnScreen + carpenter.height);

@@ -13,6 +13,9 @@ namespace DewPad.Core
         BundlePlain,
         Carpenter,
 
+        /// <summary>The journal on its list of quests, where the triggers turn pages.</summary>
+        Journal,
+
         /// <summary>A menu of another mod that registered its own hints through the API.</summary>
         Registered
     }
@@ -24,6 +27,12 @@ namespace DewPad.Core
     public enum SelectAction
     {
         Select = 0,
+
+        /// <summary>A quest in the journal's list, which opens it.</summary>
+        OpenQuest,
+
+        /// <summary>A backpack slot while an item is held in the hand, which puts the item down there, swapping with what is in the slot.</summary>
+        Place,
 
         /// <summary>A backpack item in the game menu, which is picked up whole into the hand.</summary>
         PickUp,
@@ -64,7 +73,7 @@ namespace DewPad.Core
     /// tell that a menu changed by comparing two of them without allocating. <c>Bottom</c> is the lowest screen row the menu draws on, in UI pixels,
     /// so the strip can stay clear of it.
     /// </summary>
-    public readonly record struct MenuFacts(MenuKind Kind, bool CanClose, bool CanOrganize, int Bottom = 0, SelectAction Action = SelectAction.Select, OneAction One = OneAction.None);
+    public readonly record struct MenuFacts(MenuKind Kind, bool CanClose, bool CanOrganize, int Bottom = 0, SelectAction Action = SelectAction.Select, OneAction One = OneAction.None, bool PageBack = false, bool PageForward = false);
 
     /// <summary>
     /// The hints for a menu. Each rule below was read from the 1.6.15 game code and is repeated in docs/RESEARCH.md with the method it came from.
@@ -73,6 +82,10 @@ namespace DewPad.Core
     public static class PromptPlanner
     {
         public const string Select = "prompt.select";
+        public const string OpenQuest = "prompt.open-quest";
+        public const string Place = "prompt.place";
+        public const string PreviousPage = "prompt.previous-page";
+        public const string NextPage = "prompt.next-page";
         public const string PickUp = "prompt.pick-up";
         public const string TakeOne = "prompt.take-one";
         public const string PutOneInChest = "prompt.put-one-in-chest";
@@ -105,6 +118,8 @@ namespace DewPad.Core
             // highlighted, which is worth saying because selling a stack in a shop is immediate
             items.Add(new PromptItem(GamepadButton.A, facts.Action switch
             {
+                SelectAction.OpenQuest => OpenQuest,
+                SelectAction.Place => Place,
                 SelectAction.PickUp => PickUp,
                 SelectAction.Take => Take,
                 SelectAction.PutInChest => PutInChest,
@@ -153,6 +168,13 @@ namespace DewPad.Core
                     break;
                 case MenuKind.Carpenter:
                     items.Add(new PromptItem(GamepadButton.LeftTrigger, GamepadButton.RightTrigger, SwitchBuilding));
+                    break;
+                case MenuKind.Journal:
+                    // each trigger only turns a page when there is one to turn to, so each is listed on its own and only then
+                    if (facts.PageBack)
+                        items.Add(new PromptItem(GamepadButton.LeftTrigger, PreviousPage));
+                    if (facts.PageForward)
+                        items.Add(new PromptItem(GamepadButton.RightTrigger, NextPage));
                     break;
             }
 

@@ -69,6 +69,14 @@ namespace DewPad.DevHarness
             SnapPage(page.inventory.inventory[20]);
             yield return 20;
             First("page_on_empty_slot");
+
+            // an item in the hand, as after taking one with a full backpack
+            Game1.player.CursorSlotItem = ItemRegistry.Create("(O)390", 5);
+            SnapPage(page.inventory.inventory[woodSlot]);
+            yield return 20;
+            foreach (int t in Shot("ctx-page-holding")) yield return t;
+            First("page_holding_on_backpack_slot");
+            Game1.player.CursorSlotItem = null;
             Game1.exitActiveMenu();
             yield return 40;
 
@@ -116,6 +124,20 @@ namespace DewPad.DevHarness
             yield return 20;
             foreach (int t in Shot("ctx-chest-sort-button")) yield return t;
             First("chest_on_sort_button");
+
+            // an item held in the hand, which keeps the chest from closing until it is put down
+            grab.heldItem = ItemRegistry.Create("(O)390", 5);
+            SnapTo(grab, grab.ItemsToGrabMenu.inventory[3]);
+            yield return 20;
+            First("held_on_chest_slot");
+            SnapTo(grab, grab.inventory.inventory[woodSlot]);
+            yield return 20;
+            foreach (int t in Shot("ctx-chest-holding")) yield return t;
+            First("held_on_backpack_slot");
+            SnapTo(grab, grab.organizeButton);
+            yield return 20;
+            First("held_on_sort_button");
+            grab.heldItem = null;
             Game1.exitActiveMenu();
             yield return 40;
 

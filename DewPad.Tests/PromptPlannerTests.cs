@@ -104,6 +104,9 @@ namespace DewPad.Tests
         [InlineData(SelectAction.PutInChest, PromptPlanner.PutInChest)]
         [InlineData(SelectAction.Buy, PromptPlanner.Buy)]
         [InlineData(SelectAction.SellStack, PromptPlanner.SellStack)]
+        [InlineData(SelectAction.Place, PromptPlanner.Place)]
+        [InlineData(SelectAction.OpenQuest, PromptPlanner.OpenQuest)]
+        [InlineData(SelectAction.PickUp, PromptPlanner.PickUp)]
         public void TheAHintNamesWhatTheHighlightedSpotDoes(SelectAction action, string label)
         {
             var plan = PromptPlanner.Plan(new MenuFacts(MenuKind.Chest, true, false, 0, action));
@@ -139,6 +142,26 @@ namespace DewPad.Tests
             Assert.Equal(GamepadButton.A, plan[0].First);
         }
 
+        [Theory]
+        [InlineData(false, false, 0)]
+        [InlineData(true, false, 1)]
+        [InlineData(false, true, 1)]
+        [InlineData(true, true, 2)]
+        public void TheJournalListsEachTriggerOnlyWhenThereIsAPageToTurnTo(bool back, bool forward, int triggerHints)
+        {
+            var plan = PromptPlanner.Plan(new MenuFacts(MenuKind.Journal, true, false, 0, SelectAction.Select, OneAction.None, back, forward));
+            Assert.Equal(triggerHints, plan.Count(p => p.First is GamepadButton.LeftTrigger or GamepadButton.RightTrigger));
+            Assert.Equal(back, plan.Any(p => p.First == GamepadButton.LeftTrigger && p.LabelKey == PromptPlanner.PreviousPage));
+            Assert.Equal(forward, plan.Any(p => p.First == GamepadButton.RightTrigger && p.LabelKey == PromptPlanner.NextPage));
+        }
+
+        [Fact]
+        public void AQuestUnderTheHighlightSaysOpen()
+        {
+            Assert.Equal(PromptPlanner.OpenQuest, PromptPlanner.Plan(new MenuFacts(MenuKind.Journal, true, false, 0, SelectAction.OpenQuest))[0].LabelKey);
+            Assert.Equal(PromptPlanner.Select, PromptPlanner.Plan(new MenuFacts(MenuKind.Journal, true, false, 0, SelectAction.Select))[0].LabelKey);
+        }
+
         [Fact]
         public void PickUpIsALabelOfItsOwn()
         {
@@ -169,7 +192,8 @@ namespace DewPad.Tests
                 PromptPlanner.ToBackpack, PromptPlanner.ToChest, PromptPlanner.ShopOrBackpack,
                 PromptPlanner.BackpackOrIngredients, PromptPlanner.SwitchRoom, PromptPlanner.SwitchBuilding,
                 PromptPlanner.Take, PromptPlanner.PutInChest, PromptPlanner.Buy, PromptPlanner.SellStack,
-                PromptPlanner.PickUp, PromptPlanner.TakeOne, PromptPlanner.PutOneInChest, PromptPlanner.PickUpOne
+                PromptPlanner.PickUp, PromptPlanner.TakeOne, PromptPlanner.PutOneInChest, PromptPlanner.PickUpOne,
+                PromptPlanner.OpenQuest, PromptPlanner.PreviousPage, PromptPlanner.NextPage, PromptPlanner.Place
             })
                 Assert.True(texts.ContainsKey(key), $"missing text for {key}");
         }

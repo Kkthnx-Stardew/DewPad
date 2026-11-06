@@ -1,5 +1,9 @@
 {
     "prompt.select": "Select",
+    "prompt.place": "Place",
+    "prompt.open-quest": "Open",
+    "prompt.previous-page": "Previous page",
+    "prompt.next-page": "Next page",
     "prompt.pick-up": "Pick up",
     "prompt.take-one": "Take one",
     "prompt.put-one-in-chest": "Put one in chest",
