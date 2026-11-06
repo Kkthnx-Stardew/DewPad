@@ -51,6 +51,25 @@ namespace DewPad.Tests
         }
 
         [Theory]
+        [InlineData(MenuKind.BundleIngredients, GamepadButton.LeftTrigger, PromptPlanner.BackpackOrIngredients)]
+        [InlineData(MenuKind.BundleRooms, GamepadButton.LeftTrigger, PromptPlanner.SwitchRoom)]
+        [InlineData(MenuKind.Carpenter, GamepadButton.LeftTrigger, PromptPlanner.SwitchBuilding)]
+        public void BundlesAndTheCarpenterUseTheTriggersAsAPair(MenuKind kind, GamepadButton first, string label)
+        {
+            var item = Assert.Single(PromptPlanner.Plan(Facts(kind)), p => p.LabelKey == label);
+            Assert.Equal(first, item.First);
+            Assert.Equal(GamepadButton.RightTrigger, item.Second);
+        }
+
+        [Fact]
+        public void APlainBundleScreenHasNoTriggerHints()
+        {
+            var plan = PromptPlanner.Plan(Facts(MenuKind.BundlePlain));
+            Assert.DoesNotContain(plan, p => p.First is GamepadButton.LeftTrigger or GamepadButton.RightTrigger);
+            Assert.Contains(plan, p => p.LabelKey == PromptPlanner.Select);
+        }
+
+        [Theory]
         [InlineData(MenuKind.GameMenu)]
         [InlineData(MenuKind.Chest)]
         [InlineData(MenuKind.OtherItemGrab)]
@@ -67,6 +86,10 @@ namespace DewPad.Tests
         [InlineData(MenuKind.Chest)]
         [InlineData(MenuKind.OtherItemGrab)]
         [InlineData(MenuKind.Shop)]
+        [InlineData(MenuKind.BundleIngredients)]
+        [InlineData(MenuKind.BundleRooms)]
+        [InlineData(MenuKind.BundlePlain)]
+        [InlineData(MenuKind.Carpenter)]
         public void SelectComesFirstAndNoButtonIsUsedTwice(MenuKind kind)
         {
             var plan = PromptPlanner.Plan(Facts(kind, canClose: true, canOrganize: true));
@@ -89,7 +112,8 @@ namespace DewPad.Tests
             foreach (var key in new[]
             {
                 PromptPlanner.Select, PromptPlanner.Close, PromptPlanner.SwitchTab, PromptPlanner.Organize,
-                PromptPlanner.ToBackpack, PromptPlanner.ToChest, PromptPlanner.ShopOrBackpack
+                PromptPlanner.ToBackpack, PromptPlanner.ToChest, PromptPlanner.ShopOrBackpack,
+                PromptPlanner.BackpackOrIngredients, PromptPlanner.SwitchRoom, PromptPlanner.SwitchBuilding
             })
                 Assert.True(texts.ContainsKey(key), $"missing text for {key}");
         }

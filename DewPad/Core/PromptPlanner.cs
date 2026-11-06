@@ -7,7 +7,11 @@ namespace DewPad.Core
         GameMenu,
         Chest,
         OtherItemGrab,
-        Shop
+        Shop,
+        BundleIngredients,
+        BundleRooms,
+        BundlePlain,
+        Carpenter
     }
 
     /// <summary>
@@ -30,6 +34,9 @@ namespace DewPad.Core
         public const string ToBackpack = "prompt.to-backpack";
         public const string ToChest = "prompt.to-chest";
         public const string ShopOrBackpack = "prompt.shop-or-backpack";
+        public const string BackpackOrIngredients = "prompt.backpack-or-ingredients";
+        public const string SwitchRoom = "prompt.switch-room";
+        public const string SwitchBuilding = "prompt.switch-building";
 
         public static IReadOnlyList<PromptItem> Plan(MenuFacts facts)
         {
@@ -56,6 +63,16 @@ namespace DewPad.Core
                     break;
                 case MenuKind.Shop:
                     items.Add(new PromptItem(GamepadButton.LeftTrigger, GamepadButton.RightTrigger, ShopOrBackpack));
+                    break;
+                case MenuKind.BundleIngredients:
+                    // inside a bundle the right trigger jumps to the first empty ingredient slot and the left one back to the backpack
+                    items.Add(new PromptItem(GamepadButton.LeftTrigger, GamepadButton.RightTrigger, BackpackOrIngredients));
+                    break;
+                case MenuKind.BundleRooms:
+                    items.Add(new PromptItem(GamepadButton.LeftTrigger, GamepadButton.RightTrigger, SwitchRoom));
+                    break;
+                case MenuKind.Carpenter:
+                    items.Add(new PromptItem(GamepadButton.LeftTrigger, GamepadButton.RightTrigger, SwitchBuilding));
                     break;
             }
 

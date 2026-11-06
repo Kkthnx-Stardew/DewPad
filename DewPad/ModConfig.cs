@@ -11,7 +11,7 @@ namespace DewPad
         /// <summary>Show the button hints along the bottom of supported menus while a controller is in use.</summary>
         public bool ShowPrompts { get; set; } = true;
 
-        /// <summary>Which glyphs to draw. Auto is Xbox, because a PC cannot tell a PlayStation or Switch pad from an Xbox one once a driver has translated it.</summary>
+        /// <summary>Which glyphs to draw. Auto reads the name the pad gives itself and shows PlayStation or Switch when it says so, and Xbox otherwise, which is also what a pad that Steam Input or a driver presents as an Xbox pad gets.</summary>
         public PromptStyle PromptStyle { get; set; } = PromptStyle.Auto;
 
         /// <summary>GameArt follows the game's own Switch art, where Check is the Switch A. Position keeps every button where it sits on the pad, so the bottom button, the game's A, shows as the Switch B.</summary>

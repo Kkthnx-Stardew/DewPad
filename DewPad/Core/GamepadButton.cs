@@ -19,8 +19,8 @@ namespace DewPad.Core
     }
 
     /// <summary>
-    /// Which layout to show. <see cref="Auto"/> is Xbox, because a PC cannot tell a PlayStation or Switch pad from an Xbox one once a driver or
-    /// Steam Input has translated it. The game's own controller sheet has art for the Xbox, PlayStation, Switch and PlayStation with Circle to
+    /// Which layout to show. <see cref="Auto"/> follows the name the pad gives itself (see <see cref="PadNames"/>), which is Xbox for a pad that Steam
+    /// Input or a driver presents as an Xbox pad. The game's own controller sheet has art for the Xbox, PlayStation, Switch and PlayStation with Circle to
     /// confirm layouts, so those four are the choices.
     /// </summary>
     public enum PromptStyle

@@ -107,6 +107,18 @@ namespace DewPad.DevHarness
                 Game1.exitActiveMenu();
                 yield return 30;
 
+                // the community center bundles, opened from the game menu, and Robin's building list
+                Game1.activeClickableMenu = new JunimoNoteMenu(true, 1);
+                yield return 40;
+                foreach (int t in Shot($"{size}-bundles")) yield return t;
+                Game1.exitActiveMenu();
+                yield return 30;
+                Game1.activeClickableMenu = new CarpenterMenu("Robin");
+                yield return 40;
+                foreach (int t in Shot($"{size}-carpenter")) yield return t;
+                Game1.exitActiveMenu();
+                yield return 30;
+
                 // a menu that DewPad does not describe, which must show nothing
                 Game1.activeClickableMenu = new QuestLog();
                 yield return 40;

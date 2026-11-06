@@ -2,11 +2,11 @@
 
 Controller button hints for Stardew Valley's menus, and the game's own PlayStation, Switch and Xbox button art in its controller screens. It only draws. It never handles, blocks or sends an input, so it cannot change what a button does.
 
-Status, `0.1.0-beta.1`, the first beta. Needs Stardew Valley 1.6.15 and SMAPI 4.2.1 or newer.
+Status, `0.1.0-beta.2`, a beta. Needs Stardew Valley 1.6.15 and SMAPI 4.2.1 or newer.
 
 ## What it does
 
-- **Hints along the bottom of the game menu, chests and shops** while a controller is in use, in the game's own tooltip box. For example, in a chest, "A Select, B Close, LB Backpack, RB Chest, View Sort". Every hint was checked against the game's code. A hint only shows when its button does that in that menu, and Close and Sort only show when the menu can do them.
+- **Hints along the bottom of the game menu, chests, shops, the Community Center bundles and Robin's building list** while a controller is in use, in the game's own tooltip box. For example, in a chest, "A Select, B Close, LB Backpack, RB Chest, View Sort". Every hint was checked against the game's code. A hint only shows when its button does that in that menu, and Close and Sort only show when the menu can do them.
 - **Your pad's buttons.** Choose Xbox, PlayStation, PlayStation with Circle to confirm, or Switch. The hints use the game's own glyphs.
 - **The game's own controller screens in that style too.** The controls tutorial, the fishing and arcade help and the button icons. The game already has this art for all four layouts and only ever draws the Xbox one. DewPad shows the one you chose.
 
@@ -20,17 +20,21 @@ Every setting is in the Generic Mod Config Menu if you have it, or in `config.js
 |---|---|---|
 | `Enabled` | on | Turns DewPad off completely |
 | `ShowPrompts` | on | Show the hints along the bottom of supported menus |
-| `PromptStyle` | Auto | `Auto`, `Xbox`, `PlayStation`, `PlayStationCircleConfirm` or `Switch`. Auto shows Xbox, because a PC cannot tell a PlayStation or Switch pad from an Xbox one once a driver has translated it |
+| `PromptStyle` | Auto | `Auto`, `Xbox`, `PlayStation`, `PlayStationCircleConfirm` or `Switch`. Auto reads the name your pad gives itself, and shows PlayStation or Switch when it says so and Xbox otherwise. A pad that Steam Input or a driver presents as an Xbox pad shows as Xbox, so pick the layout yourself in that case |
 | `SwitchFaceLayout` | GameArt | Only for the Switch style. `GameArt` follows the game's own Switch art, where Check is the Switch A. `Position` keeps each button where it sits, so the bottom button shows as the Switch B |
 | `PromptScale` | 1.0 | Size of the hints, 0.75 to 1.5 |
 | `ReplaceGameIcons` | on | Show the chosen style in the game's controller screens. Turn it off if another mod changes those icons |
 
 ## Limits
 
-- Only the game menu, chests and shops have hints so far. Other menus show none.
+- Only the game menu, chests, shops, the bundle screens and Robin's building list have hints so far. Other menus show none, and so does any menu another mod has derived from those, because it may handle the buttons differently. The journal is left out because the game keeps its page numbers out of reach.
 - The strip never covers a menu. On a screen about 800 pixels high, such as the Steam Deck's, the game menu has room for a compact strip, and the shop and the chest do not, so those show none. A screen 720 pixels high has room for none.
 - The shoulder and trigger buttons are drawn as dark labelled pills, because the game's art has no glyph for them.
-- Not tested yet, the settings page in Generic Mod Config Menu, split screen, a real PlayStation, Switch or Steam Deck pad, and anything but Windows. `docs/RESEARCH.md` has the full list.
+- Not tested yet, the settings page in Generic Mod Config Menu, split screen, a real PlayStation, Switch or Steam Deck pad (the pad name matching is written from SDL's documented names and has not met real hardware, and the `dewpad` console command shows what name was read), and anything but Windows. `docs/RESEARCH.md` has the full list.
+
+## Cost
+
+Measured in the game on this machine, drawing the hints takes about 17 microseconds a frame, allocates effectively nothing because the layout is kept, and costs 13 nanoseconds a frame for a keyboard player. Opening and closing menus 300 times changed memory by 12 KB, which is noise. `docs/RESEARCH.md` has the numbers.
 
 ## Compatibility
 

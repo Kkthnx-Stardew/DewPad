@@ -3,6 +3,7 @@ using DewPad.Integration;
 using DewPad.Prompts;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
@@ -21,6 +22,8 @@ namespace DewPad
         private ModConfig _config = new();
         private PerScreen<PromptRenderer?>? _renderers;
         private bool _warnedSheetSize;
+        private PromptStyle _detected = PromptStyle.Xbox;
+        private string _padName = "";
 
         public override void Entry(IModHelper helper)
         {
@@ -37,6 +40,7 @@ namespace DewPad
 
             helper.Events.GameLoop.GameLaunched += OnGameLaunched;
             helper.Events.Content.AssetRequested += OnAssetRequested;
+            helper.Events.Display.MenuChanged += (_, _) => DetectPad();
             helper.Events.Content.LocaleChanged += (_, _) => InvalidateHints();
             helper.Events.Display.RenderedActiveMenu += OnRenderedActiveMenu;
             helper.ConsoleCommands.Add("dewpad", "Shows what DewPad sees in the open menu, on demand.", (_, _) => PrintStatus());
@@ -48,6 +52,35 @@ namespace DewPad
         {
             _renderers = new PerScreen<PromptRenderer?>(() => new PromptRenderer(T));
             ConfigMenu.Register(Helper, ModManifest, _config, Monitor, OnSettingsSaved);
+            DetectPad();
+        }
+
+        /// <summary>The style that is drawn. A fixed setting wins, and Auto follows the pad's own name, which is Xbox when the pad does not say otherwise.</summary>
+        private PromptStyle EffectiveStyle => _config.PromptStyle == PromptStyle.Auto ? _detected : _config.PromptStyle;
+
+        /// <summary>Reads the name of the first player's pad. Cheap, and only done when a menu opens, which is when a changed pad matters.</summary>
+        private void DetectPad()
+        {
+            try
+            {
+                var index = Game1.playerOneIndex;
+                var capabilities = (int)index >= 0 ? GamePad.GetCapabilities(index) : default;
+                string name = capabilities.IsConnected ? capabilities.DisplayName ?? "" : "";
+                var style = PadNames.Classify(name);
+                if (name == _padName && style == _detected)
+                    return;
+
+                bool styleChanged = style != _detected;
+                _padName = name;
+                _detected = style;
+                if (styleChanged && _config.PromptStyle == PromptStyle.Auto)
+                    OnSettingsSaved();
+            }
+            catch (Exception ex)
+            {
+                // a pad that cannot be read leaves the style as it was, which is the Xbox art until something better is known
+                Monitor.Log($"Could not read the pad name, so the style stays {_detected}. {ex.Message}", LogLevel.Debug);
+            }
         }
 
         private void OnSettingsSaved()
@@ -65,7 +98,7 @@ namespace DewPad
         {
             if (!_config.Enabled || !_config.ReplaceGameIcons || !e.NameWithoutLocale.IsEquivalentTo(ControllerSheet))
                 return;
-            int band = SheetBands.BandFor(_config.PromptStyle);
+            int band = SheetBands.BandFor(EffectiveStyle);
             if (band == 0)
                 return;
 
@@ -106,7 +139,7 @@ namespace DewPad
             var facts = MenuFactsReader.Read(Game1.activeClickableMenu);
             if (facts.Kind == MenuKind.Unknown)
                 return;
-            renderer.Draw(batch, facts, _config.PromptStyle, _config.SwitchFaceLayout, _config.PromptScale);
+            renderer.Draw(batch, facts, EffectiveStyle, _config.SwitchFaceLayout, _config.PromptScale);
         }
 
         // ---- the mod's API ----------------------------------------------------------
@@ -125,7 +158,8 @@ namespace DewPad
             var facts = MenuFactsReader.Read(menu);
             var renderer = _renderers?.Value;
             Monitor.Log(
-                $"DewPad {ModManifest.Version}. Enabled {_config.Enabled}, style {_config.PromptStyle} (band {SheetBands.BandFor(_config.PromptStyle)}), " +
+                $"DewPad {ModManifest.Version}. Enabled {_config.Enabled}, style setting {_config.PromptStyle}, drawing {EffectiveStyle} (sheet band {SheetBands.BandFor(EffectiveStyle)}), " +
+                $"pad name '{(_padName == "" ? "none connected" : _padName)}' read as {_detected}, " +
                 $"controller mode {Game1.options.gamepadControls}, controller sheet {(Game1.controllerMaps is null ? "missing" : SheetBands.IsExpectedSize(Game1.controllerMaps.Width, Game1.controllerMaps.Height) ? "as expected" : "changed by another mod")}. " +
                 $"Open menu {menu?.GetType().Name ?? "none"} read as {facts.Kind}, can close {facts.CanClose}, can sort {facts.CanOrganize}, hints shown {renderer?.Count ?? 0}.",
                 LogLevel.Info);

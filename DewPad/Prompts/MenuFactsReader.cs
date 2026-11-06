@@ -25,8 +25,13 @@ namespace DewPad.Prompts
 
         public static MenuFacts Read(IClickableMenu? menu)
         {
-            // another menu on top, text entry or a dialogue box owns the buttons, so nothing is promised
-            if (menu is null || menu.GetChildMenu() is not null || Game1.textEntry is not null || Game1.dialogueUp)
+            // another menu on top, text entry, a dialogue box or an active chat box owns the buttons, so nothing is promised
+            if (menu is null || menu.GetChildMenu() is not null || Game1.textEntry is not null || Game1.dialogueUp || Game1.chatBox?.isActive() == true)
+                return default;
+
+            // a menu that another mod derives from the game's may handle the buttons differently, so only the game's own menus are described
+            if (menu.GetType() != typeof(GameMenu) && menu.GetType() != typeof(ItemGrabMenu) && menu.GetType() != typeof(ShopMenu)
+                && menu.GetType() != typeof(JunimoNoteMenu) && menu.GetType() != typeof(CarpenterMenu))
                 return default;
 
             switch (menu)
@@ -34,7 +39,7 @@ namespace DewPad.Prompts
                 case GameMenu game when !game.invisible:
                 {
                     var page = game.currentTab >= 0 && game.currentTab < game.pages.Count ? game.pages[game.currentTab] : null;
-                    bool canOrganize = page is InventoryPage inventory && inventory.organizeButton is not null;
+                    bool canOrganize = page is InventoryPage inventory && inventory.GetType() == typeof(InventoryPage) && inventory.organizeButton is not null;
                     return new MenuFacts(MenuKind.GameMenu, game.readyToClose(), canOrganize, game.yPositionOnScreen + game.height);
                 }
                 case ItemGrabMenu grab:
@@ -45,6 +50,15 @@ namespace DewPad.Prompts
                 }
                 case ShopMenu shop:
                     return new MenuFacts(MenuKind.Shop, shop.readyToClose(), false, Lowest(shop.yPositionOnScreen + shop.height, shop.inventory, null, null));
+                case JunimoNoteMenu bundle:
+                {
+                    // the triggers act inside a bundle, and swap the room pages when the menu was opened from the game menu
+                    var kind = bundle.specificBundlePage ? MenuKind.BundleIngredients : bundle.fromGameMenu ? MenuKind.BundleRooms : MenuKind.BundlePlain;
+                    return new MenuFacts(kind, bundle.readyToClose(), false, bundle.yPositionOnScreen + bundle.height);
+                }
+                case CarpenterMenu carpenter when !carpenter.onFarm:
+                    // only the building list, not the farm view where a building is placed
+                    return new MenuFacts(MenuKind.Carpenter, carpenter.readyToClose(), false, carpenter.yPositionOnScreen + carpenter.height);
                 default:
                     return default;
             }
