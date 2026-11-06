@@ -1,0 +1,134 @@
+using DewPad.Core;
+using DewPad.Integration;
+using DewPad.Prompts;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using StardewModdingAPI;
+using StardewModdingAPI.Events;
+using StardewModdingAPI.Utilities;
+using StardewValley;
+
+namespace DewPad
+{
+    /// <summary>
+    /// Controller button prompts for the game's menus, and the game's own PlayStation, Switch and Circle to confirm art in place of its Xbox art.
+    /// It reads menus and draws, and never handles, blocks or sends an input, so it cannot change what a button does. No Harmony and nothing saved.
+    /// </summary>
+    public sealed class ModEntry : Mod
+    {
+        private const string ControllerSheet = "LooseSprites/ControllerMaps";
+
+        private ModConfig _config = new();
+        private PerScreen<PromptRenderer?>? _renderers;
+        private bool _warnedSheetSize;
+
+        public override void Entry(IModHelper helper)
+        {
+            try
+            {
+                _config = helper.ReadConfig<ModConfig>() ?? new ModConfig();
+            }
+            catch (Exception ex)
+            {
+                // a config.json that cannot be read must not stop the mod, and the file is left alone
+                Monitor.Log($"Could not read config.json, so the default settings are used. Fix it or delete it. ({ex.Message})", LogLevel.Warn);
+            }
+            _config.Normalize();
+
+            helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+            helper.Events.Content.AssetRequested += OnAssetRequested;
+            helper.Events.Content.LocaleChanged += (_, _) => InvalidateHints();
+            helper.Events.Display.RenderedActiveMenu += OnRenderedActiveMenu;
+            helper.ConsoleCommands.Add("dewpad", "Shows what DewPad sees in the open menu, on demand.", (_, _) => PrintStatus());
+        }
+
+        private string T(string key) => Helper.Translation.Get(key);
+
+        private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
+        {
+            _renderers = new PerScreen<PromptRenderer?>(() => new PromptRenderer(T));
+            ConfigMenu.Register(Helper, ModManifest, _config, Monitor, OnSettingsSaved);
+        }
+
+        private void OnSettingsSaved()
+        {
+            // the game's controller sheet is edited from the settings, so it is read again and the hints are laid out again
+            Helper.GameContent.InvalidateCache(ControllerSheet);
+            InvalidateHints();
+        }
+
+        private void InvalidateHints() => _renderers?.GetActiveValues().ToList().ForEach(pair => pair.Value?.Invalidate());
+
+        // ---- the game's own controller art -----------------------------------------
+
+        private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
+        {
+            if (!_config.Enabled || !_config.ReplaceGameIcons || !e.NameWithoutLocale.IsEquivalentTo(ControllerSheet))
+                return;
+            int band = SheetBands.BandFor(_config.PromptStyle);
+            if (band == 0)
+                return;
+
+            e.Edit(asset =>
+            {
+                var image = asset.AsImage();
+                if (!SheetBands.IsExpectedSize(image.Data.Width, image.Data.Height))
+                {
+                    // another mod changed the sheet, so it is left exactly as it is
+                    if (!_warnedSheetSize)
+                    {
+                        _warnedSheetSize = true;
+                        Monitor.Log($"The controller sheet is {image.Data.Width}x{image.Data.Height} and not the {SheetBands.SheetWidth}x{SheetBands.SheetHeight} that was read, so the game's controller icons are left alone.", LogLevel.Warn);
+                    }
+                    return;
+                }
+
+                // the game only ever draws the top band, which is the Xbox art. This puts the chosen layout's band there
+                image.PatchImage(image.Data, new Rectangle(0, band * SheetBands.BandHeight, SheetBands.SheetWidth, SheetBands.BandHeight),
+                    new Rectangle(0, 0, SheetBands.SheetWidth, SheetBands.BandHeight), PatchMode.Replace);
+            });
+        }
+
+        // ---- the hint strip -----------------------------------------------------
+
+        private void OnRenderedActiveMenu(object? sender, RenderedActiveMenuEventArgs e) => DrawHints(e.SpriteBatch);
+
+        /// <summary>Draws the hints for the open menu, or nothing. Also what the mod's API draws, so a test sees what a player sees.</summary>
+        internal void DrawHints(SpriteBatch batch)
+        {
+            var renderer = _renderers?.Value;
+            renderer?.BeginFrame();
+
+            // only while a controller is in use, using the game's own controller mode, so a keyboard and mouse player never sees it
+            if (!_config.Enabled || !_config.ShowPrompts || !Game1.options.gamepadControls || renderer is null)
+                return;
+
+            var facts = MenuFactsReader.Read(Game1.activeClickableMenu);
+            if (facts.Kind == MenuKind.Unknown)
+                return;
+            renderer.Draw(batch, facts, _config.PromptStyle, _config.SwitchFaceLayout, _config.PromptScale);
+        }
+
+        // ---- the mod's API ----------------------------------------------------------
+
+        public override object GetApi() => new DewPadApi(this);
+
+        internal Rectangle HintBounds => _renderers?.Value?.Bounds ?? Rectangle.Empty;
+
+        internal int HintCount => _renderers?.Value?.Count ?? 0;
+
+        // ---- diagnostics ----------------------------------------------------------
+
+        private void PrintStatus()
+        {
+            var menu = Game1.activeClickableMenu;
+            var facts = MenuFactsReader.Read(menu);
+            var renderer = _renderers?.Value;
+            Monitor.Log(
+                $"DewPad {ModManifest.Version}. Enabled {_config.Enabled}, style {_config.PromptStyle} (band {SheetBands.BandFor(_config.PromptStyle)}), " +
+                $"controller mode {Game1.options.gamepadControls}, controller sheet {(Game1.controllerMaps is null ? "missing" : SheetBands.IsExpectedSize(Game1.controllerMaps.Width, Game1.controllerMaps.Height) ? "as expected" : "changed by another mod")}. " +
+                $"Open menu {menu?.GetType().Name ?? "none"} read as {facts.Kind}, can close {facts.CanClose}, can sort {facts.CanOrganize}, hints shown {renderer?.Count ?? 0}.",
+                LogLevel.Info);
+        }
+    }
+}

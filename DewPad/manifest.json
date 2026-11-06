@@ -1,0 +1,11 @@
+{
+    "Name": "DewPad",
+    "Author": "Kkthnx",
+    "Version": "0.1.0-beta.1",
+    "Description": "Controller button hints for the game menu, chests and shops, and the game's own PlayStation, Switch or Xbox art in its controller screens. Only draws, never changes an input, stores nothing in the save.",
+    "UniqueID": "Kkthnx.DewPad",
+    "EntryDll": "DewPad.dll",
+    "MinimumApiVersion": "4.2.1",
+    "MinimumGameVersion": "1.6.15",
+    "UpdateKeys": [ "GitHub:Kkthnx-Stardew/DewPad" ]
+}

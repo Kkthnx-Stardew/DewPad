@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="DewPad.Tests/DewPad.Tests.csproj" />
+  <Project Path="DewPad.DevHarness/DewPad.DevHarness.csproj" />
+  <Project Path="DewPad/DewPad.csproj" />
+</Solution>

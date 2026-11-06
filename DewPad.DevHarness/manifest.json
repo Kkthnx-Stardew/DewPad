@@ -1,0 +1,9 @@
+{
+    "Name": "DewPad DevHarness",
+    "Author": "Kkthnx",
+    "Version": "0.1.0",
+    "Description": "Test tool for DewPad. Does nothing unless the DPH_OUT environment variable is set. Never ship this.",
+    "UniqueID": "Kkthnx.DewPad.DevHarness",
+    "EntryDll": "DewPad.DevHarness.dll",
+    "MinimumApiVersion": "4.2.1"
+}
