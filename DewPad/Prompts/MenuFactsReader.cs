@@ -108,7 +108,7 @@ namespace DewPad.Prompts
 
         public static MenuFacts Read(IClickableMenu? menu)
         {
-            if (IsBlocked(menu))
+            if (menu is null || IsBlocked(menu))
                 return default;
 
             // a menu that another mod derives from the game's may handle the buttons differently, so only the game's own menus are described

@@ -24,6 +24,7 @@ namespace DewPad
         private bool _warnedSheetSize;
         private PromptStyle _detected = PromptStyle.Xbox;
         private string _padName = "";
+        private bool? _onSteamDeck;
         private readonly Dictionary<string, PromptItem[]> _registered = new();
 
         public override void Entry(IModHelper helper)
@@ -64,15 +65,20 @@ namespace DewPad
         /// </summary>
         private bool IsSteamDeck()
         {
+            // the answer cannot change while the game runs, so Steam is asked once, and a failing call is not repeated every time a menu opens
+            if (_onSteamDeck is { } known)
+                return known;
+
             try
             {
-                return QuerySteamDeck();
+                _onSteamDeck = QuerySteamDeck();
             }
             catch (Exception)
             {
                 // no Steam library, Steam not running or the call failing all mean the same, not a Deck
-                return false;
+                _onSteamDeck = false;
             }
+            return _onSteamDeck.Value;
         }
 
         // kept apart so that a missing Steam library fails here, inside the try above, and not where the caller is compiled
