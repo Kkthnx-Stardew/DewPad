@@ -5,7 +5,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<RootNamespace>DewPad</RootNamespace>
 		<AssemblyName>DewPad</AssemblyName>
-		<Version>0.1.0-beta.2</Version>
+		<Version>0.1.0-beta.3</Version>
 		<!-- read only overlay, so Harmony is not referenced -->
 		<EnableHarmony>false</EnableHarmony>
 		<!-- builds never copy into the live Mods folder, which holds a large unrelated mod list -->
@@ -14,5 +14,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.4.0" />
+		<!-- the game's own copy of the Steam library, only to ask whether this is a Steam Deck the way the game does. Never copied into the mod folder -->
+		<Reference Include="Steamworks.NET" HintPath="$(GamePath)\Steamworks.NET.dll" Private="false" />
 	</ItemGroup>
 </Project>

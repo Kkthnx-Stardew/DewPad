@@ -21,6 +21,9 @@ DewPad for Stardew Valley 1.6.15 (build 24356) and SMAPI 4.5.2. Everything in th
 | Why is the journal left out | `QuestLog` handles the triggers for its pages, but `pages`, `currentPage` and `questPage` are protected, so a correct hint would need reflection |
 | How does the game deliver controller buttons to a menu | `Game1` calls `receiveGamePadButton` on the top-most menu whenever `gamepadControls` is on and the chat box is not active, and the generic A and X clicks apply to every menu that does not override `areGamePadControlsImplemented`, which none of these do. Neither needs "controller-style menus", so the hints hold with it off |
 | Where does a pad's name come from | The game ships SDL2 with MonoGame's SDL backend, where `GamePadCapabilities.DisplayName` is the SDL controller name. A pad that Steam Input presents as an Xbox pad is named like one |
+| What does A do in a shop | `ShopMenu.receiveLeftClick`. On a row for sale it buys one. On a backpack item the shop will take, with an empty hand and a shop that is not read only, it sells the whole stack at once, adds the money and offers buyback, with no confirmation. An item the shop does not take is dimmed by `highlightItemToSell` and the click does nothing |
+| What does A do in a chest | `ItemGrabMenu.receiveLeftClick`. With an empty hand, a click on a chest item takes it into the backpack, and a click on a backpack item runs `behaviorFunction`, which puts it in the chest. A slot the grid dims does nothing |
+| How does the game know it is on a Steam Deck | `SteamHelper` asks `SteamUtils.IsSteamRunningOnSteamDeck()` from Steamworks.NET. DewPad makes the same call, and any failure, such as no Steam, means not a Deck |
 | Which controller mods exist | Star Control and its fork both use the manifest ID `focustense.StarControl`. They draw radial menus and remap buttons. DewPad does not touch input, so there is nothing to conflict over |
 | Controller mods in your game | None of the installed mods are controller mods |
 
@@ -48,6 +51,9 @@ Run with `tools/Run-Harness.ps1` on a throwaway farm. The live Mods folder and y
 - Changing the style while the game runs, the way saving the settings page does, put the PlayStation, Switch and Circle to confirm bands in the game's sheet, each 100% identical to its band, with no restart and without disposing the texture.
 - The bundle screens and Robin's building list show their hints in the PlayStation style, clear of the menu at three UI sizes.
 
+- In a chest with the highlight on an item, where the context reading does the most work, drawing still costs 16.8 microseconds a frame and allocates 0.01 bytes. The highlight on a chest item reads "Take", on an empty chest slot "Select", on a backpack item "Put in chest", on the sort button "Select". In a shop the item for sale reads "Buy", a parsnip Pierre buys reads "Sell stack", and wood he does not buy and a tool read "Select".
+- Hints registered through the API show for a menu DewPad does not describe, a bad entry is skipped with a warning naming the mod that sent it, registering again replaces, an empty list removes, and unregistering clears. In the Steam Deck style the strip shows the Xbox position face buttons and L2 and R2 pills.
+
 ## Not checked
 
-The Generic Mod Config Menu page, split screen, a real PlayStation, Switch or Steam Deck pad (so the pad name matching has not met real names), other mods that draw in the same place, and any platform other than Windows. The glyph for Back on the PlayStation layout is the game's touchpad glyph, and whether a Steam Input setup sends the touchpad click as Back is not known.
+The Steam Deck detection on a real Steam Deck, the Generic Mod Config Menu page, split screen, a real PlayStation, Switch or Steam Deck pad (so the pad name matching has not met real names), other mods that draw in the same place, and any platform other than Windows. The glyph for Back on the PlayStation layout is the game's touchpad glyph, and whether a Steam Input setup sends the touchpad click as Back is not known.

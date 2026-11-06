@@ -133,6 +133,28 @@ namespace DewPad.DevHarness
             info["keyboard_mode_microseconds_per_frame"] = Math.Round(keyboard, 3);
             info["keyboard_mode_bytes_allocated_per_frame"] = Math.Round(keyboardBytes / (40.0 * perBatch), 2);
 
+            // the worst case for the new context reading, a chest with the highlight on an item
+            Game1.options.gamepadMode = Options.GamepadModes.ForceOn;
+            Game1.exitActiveMenu();
+            yield return 30;
+            var chest = new StardewValley.Objects.Chest(true);
+            chest.Items.Add(ItemRegistry.Create("(O)390", 12));
+            Game1.player.currentLocation = Game1.getFarm();
+            chest.ShowMenu();
+            yield return 40;
+            var grab = (ItemGrabMenu)Game1.activeClickableMenu!;
+            grab.setCurrentlySnappedComponentTo(grab.ItemsToGrabMenu.inventory[0].myID);
+            yield return 20;
+            Measure(5, out _);
+            double chestDraw = Measure(40, out long chestBytes);
+            info["chest_on_item_microseconds_per_frame"] = Math.Round(chestDraw, 2);
+            info["chest_on_item_bytes_allocated_per_frame"] = Math.Round(chestBytes / (40.0 * perBatch), 2);
+            info["chest_on_item_first_hint"] = api.HintLabels.Length > 0 ? api.HintLabels[0] : "none";
+            Game1.exitActiveMenu();
+            yield return 30;
+            Game1.activeClickableMenu = new GameMenu(GameMenu.inventoryTab);
+            yield return 40;
+
             // the menu's own draw, for scale
             Game1.options.gamepadMode = Options.GamepadModes.ForceOn;
             yield return 40;

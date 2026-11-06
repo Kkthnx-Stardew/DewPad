@@ -75,7 +75,7 @@ namespace DewPad.Core
 
         private static string Shoulder(PromptStyle style, bool left, bool trigger) => style switch
         {
-            PromptStyle.PlayStation or PromptStyle.PlayStationCircleConfirm => trigger ? (left ? "L2" : "R2") : (left ? "L1" : "R1"),
+            PromptStyle.PlayStation or PromptStyle.PlayStationCircleConfirm or PromptStyle.SteamDeck => trigger ? (left ? "L2" : "R2") : (left ? "L1" : "R1"),
             PromptStyle.Switch => trigger ? (left ? "ZL" : "ZR") : (left ? "L" : "R"),
             _ => trigger ? (left ? "LT" : "RT") : (left ? "LB" : "RB")
         };

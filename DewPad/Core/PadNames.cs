@@ -23,6 +23,16 @@ namespace DewPad.Core
             return PromptStyle.Xbox;
         }
 
+        /// <summary>
+        /// The style for Auto. A pad that names itself PlayStation or Nintendo wins, even on a Steam Deck with one plugged in. Otherwise a Steam Deck
+        /// gets its own style, and everything else is Xbox.
+        /// </summary>
+        public static PromptStyle Choose(string? displayName, bool onSteamDeck)
+        {
+            var named = Classify(displayName);
+            return named == PromptStyle.Xbox && onSteamDeck ? PromptStyle.SteamDeck : named;
+        }
+
         private static bool ContainsAny(string name, string[] words)
         {
             foreach (var word in words)

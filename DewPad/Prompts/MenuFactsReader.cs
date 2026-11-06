@@ -23,10 +23,50 @@ namespace DewPad.Prompts
             return bottom;
         }
 
+        /// <summary>True when the highlighted spot is a slot of that grid holding an item the game would act on. A slot the grid dims is not clickable, so it does not count.</summary>
+        private static bool OnClickableItem(InventoryMenu? grid, ClickableComponent? spot)
+        {
+            if (grid is null || spot is null || grid.actualInventory is null || !grid.inventory.Contains(spot))
+                return false;
+            if (!int.TryParse(spot.name, out int slot) || slot < 0 || slot >= grid.actualInventory.Count)
+                return false;
+            var item = grid.actualInventory[slot];
+            return item is not null && (grid.highlightMethod is null || grid.highlightMethod(item));
+        }
+
+        /// <summary>In an ordinary chest with an empty hand, A takes a chest item to the backpack and puts a backpack item in the chest (<c>ItemGrabMenu.receiveLeftClick</c>).</summary>
+        private static SelectAction ChestAction(ItemGrabMenu grab, MenuKind kind)
+        {
+            if (kind != MenuKind.Chest || grab.heldItem is not null)
+                return SelectAction.Select;
+            var spot = grab.currentlySnappedComponent;
+            if (grab.showReceivingMenu && OnClickableItem(grab.ItemsToGrabMenu, spot))
+                return SelectAction.Take;
+            if (grab.behaviorFunction is not null && OnClickableItem(grab.inventory, spot))
+                return SelectAction.PutInChest;
+            return SelectAction.Select;
+        }
+
+        /// <summary>In a shop, A on a row for sale buys one, and A on a backpack item it will take, with an empty hand, sells the whole stack (<c>ShopMenu.receiveLeftClick</c>).</summary>
+        private static SelectAction ShopAction(ShopMenu shop)
+        {
+            var spot = shop.currentlySnappedComponent;
+            if (spot is null)
+                return SelectAction.Select;
+            if (shop.forSaleButtons.Contains(spot))
+                return SelectAction.Buy;
+            if (!shop.readOnly && shop.heldItem is null && OnClickableItem(shop.inventory, spot))
+                return SelectAction.SellStack;
+            return SelectAction.Select;
+        }
+
+        /// <summary>Another menu on top, text entry, a dialogue box or an active chat box owns the buttons, so nothing is promised for the menu underneath.</summary>
+        public static bool IsBlocked(IClickableMenu? menu) =>
+            menu is null || menu.GetChildMenu() is not null || Game1.textEntry is not null || Game1.dialogueUp || Game1.chatBox?.isActive() == true;
+
         public static MenuFacts Read(IClickableMenu? menu)
         {
-            // another menu on top, text entry, a dialogue box or an active chat box owns the buttons, so nothing is promised
-            if (menu is null || menu.GetChildMenu() is not null || Game1.textEntry is not null || Game1.dialogueUp || Game1.chatBox?.isActive() == true)
+            if (IsBlocked(menu))
                 return default;
 
             // a menu that another mod derives from the game's may handle the buttons differently, so only the game's own menus are described
@@ -46,10 +86,10 @@ namespace DewPad.Prompts
                 {
                     // the bumper jumps are only described for an ordinary chest, never for the shipping bin or a fishing treasure
                     var kind = !grab.shippingBin && grab.source == ItemGrabMenu.source_chest ? MenuKind.Chest : MenuKind.OtherItemGrab;
-                    return new MenuFacts(kind, grab.readyToClose(), grab.organizeButton is not null, Lowest(grab.yPositionOnScreen + grab.height, grab.inventory, grab.okButton, grab.trashCan));
+                    return new MenuFacts(kind, grab.readyToClose(), grab.organizeButton is not null, Lowest(grab.yPositionOnScreen + grab.height, grab.inventory, grab.okButton, grab.trashCan), ChestAction(grab, kind));
                 }
                 case ShopMenu shop:
-                    return new MenuFacts(MenuKind.Shop, shop.readyToClose(), false, Lowest(shop.yPositionOnScreen + shop.height, shop.inventory, null, null));
+                    return new MenuFacts(MenuKind.Shop, shop.readyToClose(), false, Lowest(shop.yPositionOnScreen + shop.height, shop.inventory, null, null), ShopAction(shop));
                 case JunimoNoteMenu bundle:
                 {
                     // the triggers act inside a bundle, and swap the room pages when the menu was opened from the game menu

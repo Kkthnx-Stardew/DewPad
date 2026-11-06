@@ -11,7 +11,31 @@ namespace DewPad.Core
         BundleIngredients,
         BundleRooms,
         BundlePlain,
-        Carpenter
+        Carpenter,
+
+        /// <summary>A menu of another mod that registered its own hints through the API.</summary>
+        Registered
+    }
+
+    /// <summary>
+    /// What the A button does at the highlighted spot, when the game's code makes that certain. Everything else is <see cref="Select"/>, which is
+    /// just a click on whatever is highlighted.
+    /// </summary>
+    public enum SelectAction
+    {
+        Select = 0,
+
+        /// <summary>A chest item, which moves to the backpack.</summary>
+        Take,
+
+        /// <summary>A backpack item while a chest is open, which moves into the chest.</summary>
+        PutInChest,
+
+        /// <summary>A shop item for sale, which buys one.</summary>
+        Buy,
+
+        /// <summary>A backpack item the shop will take, which sells the whole stack at once, with no confirmation.</summary>
+        SellStack
     }
 
     /// <summary>
@@ -19,7 +43,7 @@ namespace DewPad.Core
     /// tell that a menu changed by comparing two of them without allocating. <c>Bottom</c> is the lowest screen row the menu draws on, in UI pixels,
     /// so the strip can stay clear of it.
     /// </summary>
-    public readonly record struct MenuFacts(MenuKind Kind, bool CanClose, bool CanOrganize, int Bottom = 0);
+    public readonly record struct MenuFacts(MenuKind Kind, bool CanClose, bool CanOrganize, int Bottom = 0, SelectAction Action = SelectAction.Select);
 
     /// <summary>
     /// The hints for a menu. Each rule below was read from the 1.6.15 game code and is repeated in docs/RESEARCH.md with the method it came from.
@@ -28,6 +52,10 @@ namespace DewPad.Core
     public static class PromptPlanner
     {
         public const string Select = "prompt.select";
+        public const string Take = "prompt.take";
+        public const string PutInChest = "prompt.put-in-chest";
+        public const string Buy = "prompt.buy";
+        public const string SellStack = "prompt.sell-stack";
         public const string Close = "prompt.close";
         public const string SwitchTab = "prompt.switch-tab";
         public const string Organize = "prompt.organize";
@@ -38,14 +66,26 @@ namespace DewPad.Core
         public const string SwitchRoom = "prompt.switch-room";
         public const string SwitchBuilding = "prompt.switch-building";
 
-        public static IReadOnlyList<PromptItem> Plan(MenuFacts facts)
+        public static IReadOnlyList<PromptItem> Plan(MenuFacts facts, IReadOnlyList<PromptItem>? registered = null)
         {
+            // the hints a mod registered for its own menu are shown exactly as registered
+            if (facts.Kind == MenuKind.Registered)
+                return registered ?? Array.Empty<PromptItem>();
+
             var items = new List<PromptItem>(5);
             if (facts.Kind == MenuKind.Unknown)
                 return items;
 
-            // A clicks the highlighted item in every menu the game moves a highlight in
-            items.Add(new PromptItem(GamepadButton.A, Select));
+            // A clicks the highlighted item in every menu the game moves a highlight in, and in a chest or a shop what that click does depends on what is
+            // highlighted, which is worth saying because selling a stack in a shop is immediate
+            items.Add(new PromptItem(GamepadButton.A, facts.Action switch
+            {
+                SelectAction.Take => Take,
+                SelectAction.PutInChest => PutInChest,
+                SelectAction.Buy => Buy,
+                SelectAction.SellStack => SellStack,
+                _ => Select
+            }));
 
             // B and Start close a menu once it is ready to close, for example not while an item is held
             if (facts.CanClose)

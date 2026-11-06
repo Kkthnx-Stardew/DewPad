@@ -61,6 +61,7 @@ namespace DewPad.Prompts
 
         // what the layout was made from, so a change in any of it makes a new layout
         private MenuFacts _facts;
+        private IReadOnlyList<PromptItem>? _registered;
         private PromptStyle _style;
         private SwitchFaceLayout _switchLayout;
         private float _scale;
@@ -79,10 +80,13 @@ namespace DewPad.Prompts
         /// <summary>The number of hints in the strip, for the diagnostics command and tests.</summary>
         public int Count => _drawn ? _entries.Length : 0;
 
+        /// <summary>The text of each hint drawn, for tests and diagnostics. Allocates, so it is never called while drawing.</summary>
+        public string[] Labels() => _drawn ? Array.ConvertAll(_entries, e => e.Text) : Array.Empty<string>();
+
         /// <summary>Where the strip is on screen, empty when nothing was drawn.</summary>
         public Rectangle Bounds => _drawn && _entries.Length > 0 ? _box : Rectangle.Empty;
 
-        public void Draw(SpriteBatch batch, MenuFacts facts, PromptStyle style, SwitchFaceLayout switchLayout, float scale)
+        public void Draw(SpriteBatch batch, MenuFacts facts, PromptStyle style, SwitchFaceLayout switchLayout, float scale, IReadOnlyList<PromptItem>? registered = null)
         {
             // the sheet is read from the game each frame, because a changed setting reloads it and an old reference would be a dead texture
             var sheet = Game1.controllerMaps;
@@ -90,9 +94,9 @@ namespace DewPad.Prompts
                 return;
 
             var viewport = Game1.uiViewport;
-            if (!_hasLayout || _builtVersion != _version || facts != _facts || style != _style || switchLayout != _switchLayout
+            if (!_hasLayout || _builtVersion != _version || !ReferenceEquals(registered, _registered) || facts != _facts || style != _style || switchLayout != _switchLayout
                 || scale != _scale || viewport.Width != _width || viewport.Height != _height)
-                Build(facts, style, switchLayout, scale, viewport.Width, viewport.Height);
+                Build(facts, style, switchLayout, scale, viewport.Width, viewport.Height, registered);
 
             if (_entries.Length == 0)
                 return;
@@ -127,9 +131,10 @@ namespace DewPad.Prompts
             Utility.drawTextWithShadow(batch, glyph.Label, Game1.smallFont, glyph.LabelAt, PillText, _scale * PillTextScale, TextLayer, 0, 0);
         }
 
-        private void Build(MenuFacts facts, PromptStyle style, SwitchFaceLayout switchLayout, float scale, int width, int height, bool compact = false)
+        private void Build(MenuFacts facts, PromptStyle style, SwitchFaceLayout switchLayout, float scale, int width, int height, IReadOnlyList<PromptItem>? registered, bool compact = false)
         {
             _facts = facts;
+            _registered = registered;
             _style = style;
             _switchLayout = switchLayout;
             _scale = scale;
@@ -139,7 +144,7 @@ namespace DewPad.Prompts
             _hasLayout = true;
             _entries = Array.Empty<Entry>();
 
-            var plan = PromptPlanner.Plan(facts);
+            var plan = PromptPlanner.Plan(facts, registered);
             if (plan.Count == 0)
                 return;
 
@@ -153,7 +158,7 @@ namespace DewPad.Prompts
             var labels = new string[plan.Count];
             for (int i = 0; i < plan.Count; i++)
             {
-                labels[i] = _translate(plan[i].LabelKey);
+                labels[i] = plan[i].IsLiteral ? plan[i].LabelKey : _translate(plan[i].LabelKey);
                 float w = GlyphWidth(GlyphMap.For(style, plan[i].First, switchLayout), glyph, font, scale);
                 if (plan[i].Second is { } second)
                     w += PairGap + GlyphWidth(GlyphMap.For(style, second, switchLayout), glyph, font, scale);
@@ -176,7 +181,7 @@ namespace DewPad.Prompts
             {
                 // a tighter strip may still fit, and when even that does not, nothing is drawn
                 if (!compact)
-                    Build(facts, style, switchLayout, scale, width, height, compact: true);
+                    Build(facts, style, switchLayout, scale, width, height, registered, compact: true);
                 return;
             }
             _box = new Rectangle((width - boxWidth) / 2, top.Value, boxWidth, boxHeight);

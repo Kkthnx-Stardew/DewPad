@@ -29,7 +29,10 @@ namespace DewPad.Core
         Xbox = 1,
         PlayStation = 2,
         PlayStationCircleConfirm = 3,
-        Switch = 4
+        Switch = 4,
+
+        /// <summary>The Steam Deck's own pad, which has the Xbox layout and is labelled L1, R1, L2 and R2 on its shoulders.</summary>
+        SteamDeck = 5
     }
 
     /// <summary>

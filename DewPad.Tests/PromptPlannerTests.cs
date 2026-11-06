@@ -98,6 +98,27 @@ namespace DewPad.Tests
             Assert.Equal(buttons.Count, buttons.Distinct().Count());
         }
 
+        [Theory]
+        [InlineData(SelectAction.Select, PromptPlanner.Select)]
+        [InlineData(SelectAction.Take, PromptPlanner.Take)]
+        [InlineData(SelectAction.PutInChest, PromptPlanner.PutInChest)]
+        [InlineData(SelectAction.Buy, PromptPlanner.Buy)]
+        [InlineData(SelectAction.SellStack, PromptPlanner.SellStack)]
+        public void TheAHintNamesWhatTheHighlightedSpotDoes(SelectAction action, string label)
+        {
+            var plan = PromptPlanner.Plan(new MenuFacts(MenuKind.Chest, true, false, 0, action));
+            Assert.Equal(GamepadButton.A, plan[0].First);
+            Assert.Equal(label, plan[0].LabelKey);
+            Assert.Single(plan, p => p.First == GamepadButton.A);
+        }
+
+        [Fact]
+        public void EveryActionHasADifferentLabel()
+        {
+            var labels = Enum.GetValues<SelectAction>().Select(a => PromptPlanner.Plan(new MenuFacts(MenuKind.Shop, true, false, 0, a))[0].LabelKey).ToList();
+            Assert.Equal(labels.Count, labels.Distinct().Count());
+        }
+
         [Fact]
         public void TheSameFactsGiveTheSameHints()
         {
@@ -113,7 +134,8 @@ namespace DewPad.Tests
             {
                 PromptPlanner.Select, PromptPlanner.Close, PromptPlanner.SwitchTab, PromptPlanner.Organize,
                 PromptPlanner.ToBackpack, PromptPlanner.ToChest, PromptPlanner.ShopOrBackpack,
-                PromptPlanner.BackpackOrIngredients, PromptPlanner.SwitchRoom, PromptPlanner.SwitchBuilding
+                PromptPlanner.BackpackOrIngredients, PromptPlanner.SwitchRoom, PromptPlanner.SwitchBuilding,
+                PromptPlanner.Take, PromptPlanner.PutInChest, PromptPlanner.Buy, PromptPlanner.SellStack
             })
                 Assert.True(texts.ContainsKey(key), $"missing text for {key}");
         }

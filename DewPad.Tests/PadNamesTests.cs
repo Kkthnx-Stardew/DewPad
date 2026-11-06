@@ -37,6 +37,17 @@ namespace DewPad.Tests
         [InlineData("   ")]
         public void NoNameGivesXbox(string? name) => Assert.Equal(PromptStyle.Xbox, PadNames.Classify(name));
 
+        [Theory]
+        [InlineData("Xbox 360 Controller", false, PromptStyle.Xbox)]
+        [InlineData("Xbox 360 Controller", true, PromptStyle.SteamDeck)]
+        [InlineData("Steam Deck", true, PromptStyle.SteamDeck)]
+        [InlineData("", true, PromptStyle.SteamDeck)]
+        [InlineData("PS5 Controller", true, PromptStyle.PlayStation)]
+        [InlineData("Switch Pro Controller", true, PromptStyle.Switch)]
+        [InlineData("PS5 Controller", false, PromptStyle.PlayStation)]
+        public void ASteamDeckGetsItsOwnStyleUnlessAPlayStationOrSwitchPadIsPluggedIn(string name, bool onDeck, PromptStyle expected)
+            => Assert.Equal(expected, PadNames.Choose(name, onDeck));
+
         [Fact]
         public void TheAnswerIsNeverAuto()
         {

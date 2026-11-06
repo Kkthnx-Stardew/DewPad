@@ -10,6 +10,7 @@ namespace DewPad.Tests
         [InlineData(PromptStyle.PlayStation, 1)]
         [InlineData(PromptStyle.Switch, 2)]
         [InlineData(PromptStyle.PlayStationCircleConfirm, 3)]
+        [InlineData(PromptStyle.SteamDeck, 0)]
         public void EachStyleHasItsBand(PromptStyle style, int band) => Assert.Equal(band, SheetBands.BandFor(style));
 
         [Fact]

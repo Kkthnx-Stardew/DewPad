@@ -14,6 +14,9 @@ namespace DewPad.DevHarness
         void DrawHints(SpriteBatch spriteBatch);
         Rectangle HintBounds { get; }
         int HintCount { get; }
+        string[] HintLabels { get; }
+        bool RegisterMenu(string menuTypeFullName, string[] hints);
+        void UnregisterMenu(string menuTypeFullName);
     }
 
     public sealed partial class ModEntry

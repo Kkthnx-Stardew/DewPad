@@ -5,7 +5,7 @@ namespace DewPad.Tests
     public class GlyphMapTests
     {
         private static readonly PromptStyle[] Styles =
-            { PromptStyle.Xbox, PromptStyle.PlayStation, PromptStyle.PlayStationCircleConfirm, PromptStyle.Switch };
+            { PromptStyle.Xbox, PromptStyle.PlayStation, PromptStyle.PlayStationCircleConfirm, PromptStyle.Switch, PromptStyle.SteamDeck };
 
         private static int Column(PromptStyle style, GamepadButton button, SwitchFaceLayout layout = SwitchFaceLayout.GameArt)
         {
@@ -62,6 +62,17 @@ namespace DewPad.Tests
                 Assert.Equal(GlyphMap.ColumnX, Column(PromptStyle.Switch, GamepadButton.X, layout));
                 Assert.Equal(GlyphMap.ColumnY, Column(PromptStyle.Switch, GamepadButton.Y, layout));
             }
+        }
+
+        [Fact]
+        public void TheSteamDeckHasTheXboxFaceButtonsAndItsOwnShoulderLabels()
+        {
+            foreach (var button in new[] { GamepadButton.X, GamepadButton.A, GamepadButton.B, GamepadButton.Y, GamepadButton.Back, GamepadButton.Start })
+                Assert.Equal(GlyphMap.For(PromptStyle.Xbox, button), GlyphMap.For(PromptStyle.SteamDeck, button));
+            Assert.Equal("L1", GlyphMap.For(PromptStyle.SteamDeck, GamepadButton.LeftBumper).Label);
+            Assert.Equal("R1", GlyphMap.For(PromptStyle.SteamDeck, GamepadButton.RightBumper).Label);
+            Assert.Equal("L2", GlyphMap.For(PromptStyle.SteamDeck, GamepadButton.LeftTrigger).Label);
+            Assert.Equal("R2", GlyphMap.For(PromptStyle.SteamDeck, GamepadButton.RightTrigger).Label);
         }
 
         [Fact]

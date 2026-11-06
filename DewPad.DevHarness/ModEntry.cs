@@ -117,6 +117,12 @@ namespace DewPad.DevHarness
 
             switch (Only)
             {
+                case "register":
+                    foreach (int w in RegisterScenario()) yield return w;
+                    break;
+                case "context":
+                    foreach (int w in ContextScenario()) yield return w;
+                    break;
                 case "restyle":
                     foreach (int w in RestyleScenario()) yield return w;
                     break;
