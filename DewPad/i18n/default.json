@@ -1,5 +1,9 @@
 {
     "prompt.select": "Select",
+    "prompt.pick-up": "Pick up",
+    "prompt.take-one": "Take one",
+    "prompt.put-one-in-chest": "Put one in chest",
+    "prompt.pick-up-one": "Pick up one",
     "prompt.take": "Take",
     "prompt.put-in-chest": "Put in chest",
     "prompt.buy": "Buy",

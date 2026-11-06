@@ -23,17 +23,21 @@ namespace DewPad.Prompts
             return bottom;
         }
 
-        /// <summary>True when the highlighted spot is a slot of that grid holding an item the game would act on. A slot the grid dims is not clickable, so it does not count.</summary>
-        private static bool OnClickableItem(InventoryMenu? grid, ClickableComponent? spot)
+        /// <summary>The item in the highlighted slot of that grid, or null. A slot the grid dims is not clickable, so it gives null.</summary>
+        private static Item? ItemAt(InventoryMenu? grid, ClickableComponent? spot)
         {
             if (grid is null || spot is null || grid.actualInventory is null || !grid.inventory.Contains(spot))
-                return false;
+                return null;
             if (!int.TryParse(spot.name, out int slot) || slot < 0 || slot >= grid.actualInventory.Count)
-                return false;
+                return null;
             var item = grid.actualInventory[slot];
-            return item is not null && (grid.highlightMethod is null || grid.highlightMethod(item));
+            return item is not null && (grid.highlightMethod is null || grid.highlightMethod(item)) ? item : null;
         }
 
+        private static bool OnClickableItem(InventoryMenu? grid, ClickableComponent? spot) => ItemAt(grid, spot) is not null;
+
+        /// <summary>A right click takes one from a stack of more than one that can be split, where a left click takes the whole stack (<c>InventoryMenu.rightClick</c>).</summary>
+        private static bool CanSplit(Item? item) => item is not null && item.Stack > 1 && item.maximumStackSize() != -1;
         /// <summary>In an ordinary chest with an empty hand, A takes a chest item to the backpack and puts a backpack item in the chest (<c>ItemGrabMenu.receiveLeftClick</c>).</summary>
         private static SelectAction ChestAction(ItemGrabMenu grab, MenuKind kind)
         {
@@ -45,6 +49,30 @@ namespace DewPad.Prompts
             if (grab.behaviorFunction is not null && OnClickableItem(grab.inventory, spot))
                 return SelectAction.PutInChest;
             return SelectAction.Select;
+        }
+
+        /// <summary>In an ordinary chest with an empty hand, X moves one item of a stack the same way A moves the whole stack (<c>ItemGrabMenu.receiveRightClick</c>).</summary>
+        private static OneAction ChestOne(ItemGrabMenu grab, MenuKind kind)
+        {
+            if (kind != MenuKind.Chest || grab.heldItem is not null)
+                return OneAction.None;
+            var spot = grab.currentlySnappedComponent;
+            if (grab.showReceivingMenu && CanSplit(ItemAt(grab.ItemsToGrabMenu, spot)))
+                return OneAction.TakeOne;
+            if (grab.behaviorFunction is not null && CanSplit(ItemAt(grab.inventory, spot)))
+                return OneAction.PutOneInChest;
+            return OneAction.None;
+        }
+
+        /// <summary>In the backpack page of the game menu, A picks up the stack under the highlight and X picks up one (<c>InventoryPage</c> and <c>InventoryMenu.rightClick</c>). Only with an empty hand.</summary>
+        private static (SelectAction, OneAction) BackpackActions(IClickableMenu? page)
+        {
+            if (page is not InventoryPage backpack || page.GetType() != typeof(InventoryPage) || Game1.player.CursorSlotItem is not null)
+                return (SelectAction.Select, OneAction.None);
+            var item = ItemAt(backpack.inventory, backpack.currentlySnappedComponent);
+            if (item is null)
+                return (SelectAction.Select, OneAction.None);
+            return (SelectAction.PickUp, CanSplit(item) ? OneAction.PickUpOne : OneAction.None);
         }
 
         /// <summary>In a shop, A on a row for sale buys one, and A on a backpack item it will take, with an empty hand, sells the whole stack (<c>ShopMenu.receiveLeftClick</c>).</summary>
@@ -80,13 +108,14 @@ namespace DewPad.Prompts
                 {
                     var page = game.currentTab >= 0 && game.currentTab < game.pages.Count ? game.pages[game.currentTab] : null;
                     bool canOrganize = page is InventoryPage inventory && inventory.GetType() == typeof(InventoryPage) && inventory.organizeButton is not null;
-                    return new MenuFacts(MenuKind.GameMenu, game.readyToClose(), canOrganize, game.yPositionOnScreen + game.height);
+                    var (action, one) = BackpackActions(page);
+                    return new MenuFacts(MenuKind.GameMenu, game.readyToClose(), canOrganize, game.yPositionOnScreen + game.height, action, one);
                 }
                 case ItemGrabMenu grab:
                 {
                     // the bumper jumps are only described for an ordinary chest, never for the shipping bin or a fishing treasure
                     var kind = !grab.shippingBin && grab.source == ItemGrabMenu.source_chest ? MenuKind.Chest : MenuKind.OtherItemGrab;
-                    return new MenuFacts(kind, grab.readyToClose(), grab.organizeButton is not null, Lowest(grab.yPositionOnScreen + grab.height, grab.inventory, grab.okButton, grab.trashCan), ChestAction(grab, kind));
+                    return new MenuFacts(kind, grab.readyToClose(), grab.organizeButton is not null, Lowest(grab.yPositionOnScreen + grab.height, grab.inventory, grab.okButton, grab.trashCan), ChestAction(grab, kind), ChestOne(grab, kind));
                 }
                 case ShopMenu shop:
                     return new MenuFacts(MenuKind.Shop, shop.readyToClose(), false, Lowest(shop.yPositionOnScreen + shop.height, shop.inventory, null, null), ShopAction(shop));

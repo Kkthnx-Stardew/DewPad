@@ -112,6 +112,39 @@ namespace DewPad.Tests
             Assert.Single(plan, p => p.First == GamepadButton.A);
         }
 
+        [Theory]
+        [InlineData(OneAction.None, null)]
+        [InlineData(OneAction.TakeOne, PromptPlanner.TakeOne)]
+        [InlineData(OneAction.PutOneInChest, PromptPlanner.PutOneInChest)]
+        [InlineData(OneAction.PickUpOne, PromptPlanner.PickUpOne)]
+        public void XIsListedOnlyWhenItSplitsOneOffAStack(OneAction one, string? label)
+        {
+            var plan = PromptPlanner.Plan(new MenuFacts(MenuKind.Chest, true, false, 0, SelectAction.Select, one));
+            var x = plan.Where(p => p.First == GamepadButton.X).ToList();
+            if (label is null)
+                Assert.Empty(x);
+            else
+                Assert.Equal(label, Assert.Single(x).LabelKey);
+        }
+
+        [Theory]
+        [InlineData(MenuKind.GameMenu, OneAction.PickUpOne)]
+        [InlineData(MenuKind.Chest, OneAction.TakeOne)]
+        [InlineData(MenuKind.Chest, OneAction.PutOneInChest)]
+        public void NoButtonIsUsedTwiceWithTheOneHint(MenuKind kind, OneAction one)
+        {
+            var plan = PromptPlanner.Plan(new MenuFacts(kind, true, true, 0, SelectAction.Take, one));
+            var buttons = plan.SelectMany(p => p.Second is null ? new[] { p.First } : new[] { p.First, p.Second.Value }).ToList();
+            Assert.Equal(buttons.Count, buttons.Distinct().Count());
+            Assert.Equal(GamepadButton.A, plan[0].First);
+        }
+
+        [Fact]
+        public void PickUpIsALabelOfItsOwn()
+        {
+            Assert.Equal(PromptPlanner.PickUp, PromptPlanner.Plan(new MenuFacts(MenuKind.GameMenu, true, false, 0, SelectAction.PickUp))[0].LabelKey);
+        }
+
         [Fact]
         public void EveryActionHasADifferentLabel()
         {
@@ -135,7 +168,8 @@ namespace DewPad.Tests
                 PromptPlanner.Select, PromptPlanner.Close, PromptPlanner.SwitchTab, PromptPlanner.Organize,
                 PromptPlanner.ToBackpack, PromptPlanner.ToChest, PromptPlanner.ShopOrBackpack,
                 PromptPlanner.BackpackOrIngredients, PromptPlanner.SwitchRoom, PromptPlanner.SwitchBuilding,
-                PromptPlanner.Take, PromptPlanner.PutInChest, PromptPlanner.Buy, PromptPlanner.SellStack
+                PromptPlanner.Take, PromptPlanner.PutInChest, PromptPlanner.Buy, PromptPlanner.SellStack,
+                PromptPlanner.PickUp, PromptPlanner.TakeOne, PromptPlanner.PutOneInChest, PromptPlanner.PickUpOne
             })
                 Assert.True(texts.ContainsKey(key), $"missing text for {key}");
         }

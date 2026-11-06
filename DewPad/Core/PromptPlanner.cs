@@ -25,6 +25,9 @@ namespace DewPad.Core
     {
         Select = 0,
 
+        /// <summary>A backpack item in the game menu, which is picked up whole into the hand.</summary>
+        PickUp,
+
         /// <summary>A chest item, which moves to the backpack.</summary>
         Take,
 
@@ -39,11 +42,29 @@ namespace DewPad.Core
     }
 
     /// <summary>
+    /// What the X button does at the highlighted spot, when it does something the A button does not. X is a right click, which takes ONE item from a
+    /// stack where A takes the whole stack, so it is only listed for a stack of more than one that can be split.
+    /// </summary>
+    public enum OneAction
+    {
+        None = 0,
+
+        /// <summary>A chest stack, one of which moves to the backpack.</summary>
+        TakeOne,
+
+        /// <summary>A backpack stack while a chest is open, one of which moves into the chest.</summary>
+        PutOneInChest,
+
+        /// <summary>A backpack stack in the game menu, one of which is picked up into the hand.</summary>
+        PickUpOne
+    }
+
+    /// <summary>
     /// What was read from a menu, and nothing else, so the same facts always give the same hints. A struct with value equality, so the caller can
     /// tell that a menu changed by comparing two of them without allocating. <c>Bottom</c> is the lowest screen row the menu draws on, in UI pixels,
     /// so the strip can stay clear of it.
     /// </summary>
-    public readonly record struct MenuFacts(MenuKind Kind, bool CanClose, bool CanOrganize, int Bottom = 0, SelectAction Action = SelectAction.Select);
+    public readonly record struct MenuFacts(MenuKind Kind, bool CanClose, bool CanOrganize, int Bottom = 0, SelectAction Action = SelectAction.Select, OneAction One = OneAction.None);
 
     /// <summary>
     /// The hints for a menu. Each rule below was read from the 1.6.15 game code and is repeated in docs/RESEARCH.md with the method it came from.
@@ -52,6 +73,10 @@ namespace DewPad.Core
     public static class PromptPlanner
     {
         public const string Select = "prompt.select";
+        public const string PickUp = "prompt.pick-up";
+        public const string TakeOne = "prompt.take-one";
+        public const string PutOneInChest = "prompt.put-one-in-chest";
+        public const string PickUpOne = "prompt.pick-up-one";
         public const string Take = "prompt.take";
         public const string PutInChest = "prompt.put-in-chest";
         public const string Buy = "prompt.buy";
@@ -80,12 +105,27 @@ namespace DewPad.Core
             // highlighted, which is worth saying because selling a stack in a shop is immediate
             items.Add(new PromptItem(GamepadButton.A, facts.Action switch
             {
+                SelectAction.PickUp => PickUp,
                 SelectAction.Take => Take,
                 SelectAction.PutInChest => PutInChest,
                 SelectAction.Buy => Buy,
                 SelectAction.SellStack => SellStack,
                 _ => Select
             }));
+
+            // X splits one off a stack, which A cannot do, so it is the second hint wherever it applies
+            switch (facts.One)
+            {
+                case OneAction.TakeOne:
+                    items.Add(new PromptItem(GamepadButton.X, TakeOne));
+                    break;
+                case OneAction.PutOneInChest:
+                    items.Add(new PromptItem(GamepadButton.X, PutOneInChest));
+                    break;
+                case OneAction.PickUpOne:
+                    items.Add(new PromptItem(GamepadButton.X, PickUpOne));
+                    break;
+            }
 
             // B and Start close a menu once it is ready to close, for example not while an item is held
             if (facts.CanClose)

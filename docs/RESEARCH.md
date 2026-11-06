@@ -23,6 +23,8 @@ DewPad for Stardew Valley 1.6.15 (build 24356) and SMAPI 4.5.2. Everything in th
 | Where does a pad's name come from | The game ships SDL2 with MonoGame's SDL backend, where `GamePadCapabilities.DisplayName` is the SDL controller name. A pad that Steam Input presents as an Xbox pad is named like one |
 | What does A do in a shop | `ShopMenu.receiveLeftClick`. On a row for sale it buys one. On a backpack item the shop will take, with an empty hand and a shop that is not read only, it sells the whole stack at once, adds the money and offers buyback, with no confirmation. An item the shop does not take is dimmed by `highlightItemToSell` and the click does nothing |
 | What does A do in a chest | `ItemGrabMenu.receiveLeftClick`. With an empty hand, a click on a chest item takes it into the backpack, and a click on a backpack item runs `behaviorFunction`, which puts it in the chest. A slot the grid dims does nothing |
+| What does X do in a chest and the backpack page | A right click. `InventoryMenu.rightClick` takes ONE item from a stack that can be split, or adds one to a held stack, where the left click takes the whole stack. In a chest `ItemGrabMenu.receiveRightClick` then moves that one item on, so X moves one item between the chest and the backpack. A tool, which cannot be split, and a single item do nothing different from A |
+| Does the game show a sell price | Yes. `ShopMenu.performHoverAction` sets `hoverPrice`, which the shop draws in its own tooltip, for the item under the cursor, and for a snapped cursor too. DewPad does not repeat it. This corrects an earlier idea of showing the price, which would have duplicated the game |
 | How does the game know it is on a Steam Deck | `SteamHelper` asks `SteamUtils.IsSteamRunningOnSteamDeck()` from Steamworks.NET. DewPad makes the same call, and any failure, such as no Steam, means not a Deck |
 | Which controller mods exist | Star Control and its fork both use the manifest ID `focustense.StarControl`. They draw radial menus and remap buttons. DewPad does not touch input, so there is nothing to conflict over |
 | Controller mods in your game | None of the installed mods are controller mods |
@@ -53,6 +55,8 @@ Run with `tools/Run-Harness.ps1` on a throwaway farm. The live Mods folder and y
 
 - In a chest with the highlight on an item, where the context reading does the most work, drawing still costs 16.8 microseconds a frame and allocates 0.01 bytes. The highlight on a chest item reads "Take", on an empty chest slot "Select", on a backpack item "Put in chest", on the sort button "Select". In a shop the item for sale reads "Buy", a parsnip Pierre buys reads "Sell stack", and wood he does not buy and a tool read "Select".
 - Hints registered through the API show for a menu DewPad does not describe, a bad entry is skipped with a warning naming the mod that sent it, registering again replaces, an empty list removes, and unregistering clears. In the Steam Deck style the strip shows the Xbox position face buttons and L2 and R2 pills.
+
+- On the backpack page the highlight on a stack of 40 reads "Pick up" and "Pick up one", on a tool only "Pick up", on an empty slot "Select". In a chest a stack of 12 reads "Take" and "Take one", a single item only "Take", a backpack stack "Put in chest" and "Put one in chest", a backpack tool only "Put in chest". Drawing costs 17 microseconds a frame, 21 in a chest with the highlight on an item, with 0.01 bytes allocated, and memory moved 9 KB over 300 menu opens.
 
 ## Not checked
 

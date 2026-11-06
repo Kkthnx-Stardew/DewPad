@@ -41,14 +41,41 @@ namespace DewPad.DevHarness
             string First(string name)
             {
                 var strip = api.HintLabels;
-                string a = strip.Length > 0 ? strip[0] : "(no strip)";
+                string a = strip.Length > 0 ? string.Join(" | ", strip) : "(no strip)";
                 info[name] = a;
                 return a;
             }
 
+            // ---- the backpack page of the game menu ----
+            Game1.activeClickableMenu = new GameMenu(GameMenu.inventoryTab);
+            yield return 40;
+            var gameMenu = (GameMenu)Game1.activeClickableMenu!;
+            var page = (InventoryPage)gameMenu.pages[0];
+            void SnapPage(ClickableComponent? spot)
+            {
+                if (spot is null)
+                    return;
+                page.currentlySnappedComponent = spot;
+                page.setCurrentlySnappedComponentTo(spot.myID);
+                page.snapCursorToCurrentSnappedComponent();
+            }
+            SnapPage(page.inventory.inventory[woodSlot]);
+            yield return 20;
+            foreach (int t in Shot("ctx-page-stack")) yield return t;
+            First("page_on_stack_of_40");
+            SnapPage(page.inventory.inventory[toolSlot]);
+            yield return 20;
+            First("page_on_tool");
+            SnapPage(page.inventory.inventory[20]);
+            yield return 20;
+            First("page_on_empty_slot");
+            Game1.exitActiveMenu();
+            yield return 40;
+
             // ---- a chest ----
             var chest = new Chest(true);
             chest.Items.Add(ItemRegistry.Create("(O)390", 12));
+            chest.Items.Add(ItemRegistry.Create("(O)388", 1));
             Game1.player.currentLocation = Game1.getFarm();
             chest.ShowMenu();
             yield return 40;
@@ -66,6 +93,14 @@ namespace DewPad.DevHarness
             yield return 20;
             foreach (int t in Shot("ctx-chest-chest-item")) yield return t;
             First("chest_on_chest_item");
+
+            SnapTo(grab, grab.ItemsToGrabMenu.inventory[1]);
+            yield return 20;
+            First("chest_on_single_item");
+
+            SnapTo(grab, grab.inventory.inventory[toolSlot]);
+            yield return 20;
+            First("chest_on_backpack_tool");
 
             SnapTo(grab, grab.ItemsToGrabMenu.inventory[5]);
             yield return 20;
